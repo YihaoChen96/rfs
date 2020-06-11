@@ -72,6 +72,7 @@ def meta_test(net, testloader, use_logit=True, is_norm=True, classifier='LR'):
                 raise NotImplementedError('classifier not supported: {}'.format(classifier))
 
             acc.append(metrics.accuracy_score(query_ys, query_ys_pred))
+            torch.cuda.empty_cache()
 
     return mean_confidence_interval(acc)
 
