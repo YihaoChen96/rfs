@@ -32,7 +32,7 @@ def meta_test(net, testloader, use_logit=True, is_norm=True, classifier='LR'):
     acc = []
 
     with torch.no_grad():
-        for idx, data in tqdm(enumerate(testloader)):
+        for idx, data in enumerate(tqdm(testloader)):
             support_xs, support_ys, query_xs, query_ys = data
             support_xs = support_xs.cuda()
             query_xs = query_xs.cuda()
