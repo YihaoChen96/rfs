@@ -61,8 +61,10 @@ def parse_option():
     # load pretrained model
     parser.add_argument('--model', type=str, default='resnet12', choices=model_pool)
     parser.add_argument('--model_path', type=str, default='', help='path to save model')
+
     parser.add_argument('--tb_path', type=str, default='', help='path to tensorboard')
     parser.add_argument('--data_root', type=str, default='', help='path to data root')
+    parser.add_argument('--save_path', type=str, default='', help='path to save model')
 
     # meta setting
     parser.add_argument('--n_test_runs', type=int, default=600, metavar='N',
@@ -114,7 +116,7 @@ def parse_option():
     if not os.path.isdir(opt.tb_folder):
         os.makedirs(opt.tb_folder)
 
-    opt.save_folder = os.path.join(opt.model_path, opt.model_name)
+    opt.save_folder = os.path.join(opt.save_path, opt.model_name)
     if not os.path.isdir(opt.save_folder):
         os.makedirs(opt.save_folder)
     return opt
