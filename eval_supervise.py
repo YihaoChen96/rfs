@@ -94,6 +94,29 @@ def parse_option():
         opt.data_root = '{}/{}'.format(opt.data_root, opt.dataset)
     opt.data_aug = True
     opt.n_gpu = torch.cuda.device_count()
+    iterations = opt.lr_decay_epochs.split(',')
+    opt.lr_decay_epochs = list([])
+    for it in iterations:
+        opt.lr_decay_epochs.append(int(it))
+
+    opt.model_name = '{}_{}_lr_{}_decay_{}_trans_{}'.format(opt.model, opt.dataset, opt.learning_rate,
+                                                            opt.weight_decay, opt.transform)
+
+    if opt.cosine:
+        opt.model_name = '{}_cosine'.format(opt.model_name)
+
+    if opt.adam:
+        opt.model_name = '{}_useAdam'.format(opt.model_name)
+
+    opt.model_name = '{}_trial_{}'.format(opt.model_name, opt.trial)
+
+    opt.tb_folder = os.path.join(opt.tb_path, opt.model_name)
+    if not os.path.isdir(opt.tb_folder):
+        os.makedirs(opt.tb_folder)
+
+    opt.save_folder = os.path.join(opt.model_path, opt.model_name)
+    if not os.path.isdir(opt.save_folder):
+        os.makedirs(opt.save_folder)
     return opt
 
 
