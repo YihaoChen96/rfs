@@ -30,16 +30,39 @@ def parse_option():
 
     parser = argparse.ArgumentParser('argument for training')
 
+    parser.add_argument('--eval_freq', type=int, default=10, help='meta-eval frequency')
+    parser.add_argument('--print_freq', type=int, default=100, help='print frequency')
+    parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
+    parser.add_argument('--save_freq', type=int, default=10, help='save frequency')
+    parser.add_argument('--batch_size', type=int, default=64, help='batch_size')
+    parser.add_argument('--num_workers', type=int, default=8, help='num of workers to use')
+    parser.add_argument('--epochs', type=int, default=100, help='number of training epochs')
+
+    # optimization
+    parser.add_argument('--learning_rate', type=float, default=0.05, help='learning rate')
+    parser.add_argument('--lr_decay_epochs', type=str, default='60,80', help='where to decay lr, can be a list')
+    parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='decay rate for learning rate')
+    parser.add_argument('--weight_decay', type=float, default=5e-4, help='weight decay')
+    parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
+    parser.add_argument('--adam', action='store_true', help='use adam optimizer')
+
+
     # load pretrained model
     parser.add_argument('--model', type=str, default='resnet12', choices=model_pool)
     parser.add_argument('--model_path', type=str, default=None, help='absolute path to .pth model')
 
     # dataset
-    parser.add_argument('--dataset', type=str, default='miniImageNet', choices=['miniImageNet', 'tieredImageNet',
+    parser.add_argument('--dataset', type=str, default='supervise_mini', choices=['supervise_mini', 'miniImageNet', 'tieredImageNet',
                                                                                 'CIFAR-FS', 'FC100'])
     parser.add_argument('--transform', type=str, default='A', choices=transforms_list)
 
-    # specify data_root
+
+    # cosine annealing
+    parser.add_argument('--cosine', action='store_true', help='using cosine annealing')
+
+    # specify folder
+    parser.add_argument('--model_path', type=str, default='', help='path to save model')
+    parser.add_argument('--tb_path', type=str, default='', help='path to tensorboard')
     parser.add_argument('--data_root', type=str, default='', help='path to data root')
 
     # meta setting
@@ -81,83 +104,29 @@ def main():
 
     # dataloader
     # train_partition = 'trainval' if opt.use_trainval else 'train'
-    if opt.dataset == 'miniImageNet':
+    if opt.dataset == 'supervise_mini':
         train_trans, test_trans = transforms_options[opt.transform]
-        train_loader = DataLoader(ImageNet(args=opt, partition="test", transform=train_trans),
+        dataset = ImageNet(args=opt, partition="test", transform=train_trans, pretrain = False)
+        train_num = int(len(dataset) * 0.8)
+        test_num = len(dataset) - train_num
+        train_set, val_set = torch.utils.data.random_split(dataset, [train_num, test_num])
+        train_loader = DataLoader(train_set,
                                   batch_size=opt.batch_size, shuffle=True, drop_last=True, 
-                                  num_workers=opt.num_workers, pretrain = False)
-        val_loader = DataLoader(ImageNet(args=opt, partition='val', transform=test_trans),
+                                  num_workers=opt.num_workers)
+        val_loader = DataLoader(val_set,
                                 batch_size=opt.batch_size //2, shuffle=False, drop_last=False,
-                                num_workers=opt.num_workers //2,  pretrain = False)
-        # meta_testloader = DataLoader(MetaImageNet(args=opt, partition='test',
-        #                                           train_transform=train_trans,
-        #                                           test_transform=test_trans),
-        #                              batch_size=opt.test_batch_size, shuffle=False, drop_last=False,
-        #                              num_workers=opt.num_workers)
-        # meta_valloader = DataLoader(MetaImageNet(args=opt, partition='val',
-        #                                          train_transform=train_trans,
-        #                                          test_transform=test_trans),
-        #                             batch_size=opt.test_batch_size, shuffle=False, drop_last=False,
-        #                             num_workers=opt.num_workers)
-        if opt.use_trainval:
-            n_cls = 80
-        else:
-            n_cls = 64
-    elif opt.dataset == 'tieredImageNet':
-        train_trans, test_trans = transforms_options[opt.transform]
-        train_loader = DataLoader(TieredImageNet(args=opt, partition=train_partition, transform=train_trans),
-                                  batch_size=opt.batch_size, shuffle=True, drop_last=True,
-                                  num_workers=opt.num_workers)
-        val_loader = DataLoader(TieredImageNet(args=opt, partition='train_phase_val', transform=test_trans),
-                                batch_size=opt.batch_size // 2, shuffle=False, drop_last=False,
-                                num_workers=opt.num_workers // 2)
-        meta_testloader = DataLoader(MetaTieredImageNet(args=opt, partition='test',
-                                                        train_transform=train_trans,
-                                                        test_transform=test_trans),
-                                     batch_size=opt.test_batch_size, shuffle=False, drop_last=False,
-                                     num_workers=opt.num_workers)
-        meta_valloader = DataLoader(MetaTieredImageNet(args=opt, partition='val',
-                                                       train_transform=train_trans,
-                                                       test_transform=test_trans),
-                                    batch_size=opt.test_batch_size, shuffle=False, drop_last=False,
-                                    num_workers=opt.num_workers)
-        if opt.use_trainval:
-            n_cls = 448
-        else:
-            n_cls = 351
-    elif opt.dataset == 'CIFAR-FS' or opt.dataset == 'FC100':
-        train_trans, test_trans = transforms_options['D']
+                                num_workers=opt.num_workers //2)
+        # val_loader = DataLoader(ImageNet(args=opt, partition='val', transform=test_trans),
+        #                         batch_size=opt.batch_size //2, shuffle=False, drop_last=False,
+        #                         num_workers=opt.num_workers //2)
 
-        train_loader = DataLoader(CIFAR100(args=opt, partition=train_partition, transform=train_trans),
-                                  batch_size=opt.batch_size, shuffle=True, drop_last=True,
-                                  num_workers=opt.num_workers)
-        val_loader = DataLoader(CIFAR100(args=opt, partition='train', transform=test_trans),
-                                batch_size=opt.batch_size // 2, shuffle=False, drop_last=False,
-                                num_workers=opt.num_workers // 2)
-        meta_testloader = DataLoader(MetaCIFAR100(args=opt, partition='test',
-                                                  train_transform=train_trans,
-                                                  test_transform=test_trans),
-                                     batch_size=opt.test_batch_size, shuffle=False, drop_last=False,
-                                     num_workers=opt.num_workers)
-        meta_valloader = DataLoader(MetaCIFAR100(args=opt, partition='val',
-                                                 train_transform=train_trans,
-                                                 test_transform=test_trans),
-                                    batch_size=opt.test_batch_size, shuffle=False, drop_last=False,
-                                    num_workers=opt.num_workers)
-        if opt.use_trainval:
-            n_cls = 80
-        else:
-            if opt.dataset == 'CIFAR-FS':
-                n_cls = 64
-            elif opt.dataset == 'FC100':
-                n_cls = 60
-            else:
-                raise NotImplementedError('dataset not supported: {}'.format(opt.dataset))
-    else:
-        raise NotImplementedError(opt.dataset)
+        n_cls = 80
+
 
     # model
     model = create_model(opt.model, n_cls, opt.dataset)
+    ckpt = torch.load(opt.model_path)
+    model.load_state_dict(ckpt['model'])
 
     # optimizer
     if opt.adam:
