@@ -42,7 +42,8 @@ class ImageNet(Dataset):
         if self.pretrain:
             self.file_pattern = 'miniImageNet_category_split_train_phase_%s.pickle'           
         else:
-            self.file_pattern = 'miniImageNet_category_split_%s.pickle'           
+            self.file_pattern = 'miniImageNet_category_split_%s.pickle'
+        print("Using data from: %s" % self.file_pattern)           
         self.data = {}
         with open(os.path.join(self.data_root, self.file_pattern % partition), 'rb') as f:
             data = pickle.load(f, encoding='latin1')
