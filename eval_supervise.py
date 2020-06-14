@@ -47,9 +47,7 @@ def parse_option():
     parser.add_argument('--adam', action='store_true', help='use adam optimizer')
 
 
-    # load pretrained model
-    parser.add_argument('--model', type=str, default='resnet12', choices=model_pool)
-    parser.add_argument('--model_path', type=str, default=None, help='absolute path to .pth model')
+
 
     # dataset
     parser.add_argument('--dataset', type=str, default='miniImageNet', choices=['miniImageNet', 'tieredImageNet',
@@ -61,6 +59,8 @@ def parse_option():
     parser.add_argument('--cosine', action='store_true', help='using cosine annealing')
 
     # specify folder
+    # load pretrained model
+    parser.add_argument('--model', type=str, default='resnet12', choices=model_pool)
     parser.add_argument('--model_path', type=str, default='', help='path to save model')
     parser.add_argument('--tb_path', type=str, default='', help='path to tensorboard')
     parser.add_argument('--data_root', type=str, default='', help='path to data root')
