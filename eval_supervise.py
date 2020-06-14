@@ -93,7 +93,7 @@ def parse_option():
     else:
         opt.data_root = '{}/{}'.format(opt.data_root, opt.dataset)
     opt.data_aug = True
-
+    opt.n_gpu = torch.cuda.device_count()
     return opt
 
 
