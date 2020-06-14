@@ -52,7 +52,7 @@ def parse_option():
     parser.add_argument('--model_path', type=str, default=None, help='absolute path to .pth model')
 
     # dataset
-    parser.add_argument('--dataset', type=str, default='supervise_mini', choices=['supervise_mini', 'miniImageNet', 'tieredImageNet',
+    parser.add_argument('--dataset', type=str, default='miniImageNet', choices=['miniImageNet', 'tieredImageNet',
                                                                                 'CIFAR-FS', 'FC100'])
     parser.add_argument('--transform', type=str, default='A', choices=transforms_list)
 
@@ -104,7 +104,7 @@ def main():
 
     # dataloader
     # train_partition = 'trainval' if opt.use_trainval else 'train'
-    if opt.dataset == 'supervise_mini':
+    if opt.dataset == 'miniImageNet':
         train_trans, test_trans = transforms_options[opt.transform]
         dataset = ImageNet(args=opt, partition="test", transform=train_trans, pretrain = False)
         train_num = int(len(dataset) * 0.8)
