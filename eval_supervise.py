@@ -79,7 +79,7 @@ def parse_option():
                         help='Number of workers for dataloader')
     parser.add_argument('--test_batch_size', type=int, default=1, metavar='test_batch_size',
                         help='Size of test batch)')
-
+    parser.add_argument('-t', '--trial', type=str, default='1', help='the experiment id')
     opt = parser.parse_args()
 
     if 'trainval' in opt.model_path:
