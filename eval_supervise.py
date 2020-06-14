@@ -119,7 +119,7 @@ def main():
         #                         batch_size=opt.batch_size //2, shuffle=False, drop_last=False,
         #                         num_workers=opt.num_workers //2)
 
-        n_cls = 80
+        n_cls = 64
 
 
     # model
