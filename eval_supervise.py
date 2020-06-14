@@ -30,35 +30,16 @@ def parse_option():
 
     parser = argparse.ArgumentParser('argument for training')
 
-    parser.add_argument('--eval_freq', type=int, default=10, help='meta-eval frequency')
-    parser.add_argument('--print_freq', type=int, default=100, help='print frequency')
-    parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
-    parser.add_argument('--save_freq', type=int, default=10, help='save frequency')
-    parser.add_argument('--batch_size', type=int, default=64, help='batch_size')
-    parser.add_argument('--num_workers', type=int, default=8, help='num of workers to use')
-    parser.add_argument('--epochs', type=int, default=100, help='number of training epochs')
-
-    # optimization
-    parser.add_argument('--learning_rate', type=float, default=0.05, help='learning rate')
-    parser.add_argument('--lr_decay_epochs', type=str, default='60,80', help='where to decay lr, can be a list')
-    parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='decay rate for learning rate')
-    parser.add_argument('--weight_decay', type=float, default=5e-4, help='weight decay')
-    parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
-    parser.add_argument('--adam', action='store_true', help='use adam optimizer')
+    # load pretrained model
+    parser.add_argument('--model', type=str, default='resnet12', choices=model_pool)
+    parser.add_argument('--model_path', type=str, default=None, help='absolute path to .pth model')
 
     # dataset
-    parser.add_argument('--model', type=str, default='resnet12', choices=model_pool)
     parser.add_argument('--dataset', type=str, default='miniImageNet', choices=['miniImageNet', 'tieredImageNet',
                                                                                 'CIFAR-FS', 'FC100'])
     parser.add_argument('--transform', type=str, default='A', choices=transforms_list)
-    parser.add_argument('--use_trainval', action='store_true', help='use trainval set')
 
-    # cosine annealing
-    parser.add_argument('--cosine', action='store_true', help='using cosine annealing')
-
-    # specify folder
-    parser.add_argument('--model_path', type=str, default='', help='path to save model')
-    parser.add_argument('--tb_path', type=str, default='', help='path to tensorboard')
+    # specify data_root
     parser.add_argument('--data_root', type=str, default='', help='path to data root')
 
     # meta setting
@@ -72,55 +53,24 @@ def parse_option():
                         help='Number of query in test')
     parser.add_argument('--n_aug_support_samples', default=5, type=int,
                         help='The number of augmented samples for each meta test sample')
+    parser.add_argument('--num_workers', type=int, default=3, metavar='N',
+                        help='Number of workers for dataloader')
     parser.add_argument('--test_batch_size', type=int, default=1, metavar='test_batch_size',
                         help='Size of test batch)')
 
-    parser.add_argument('-t', '--trial', type=str, default='1', help='the experiment id')
-
     opt = parser.parse_args()
 
-    if opt.dataset == 'CIFAR-FS' or opt.dataset == 'FC100':
-        opt.transform = 'D'
-
-    if opt.use_trainval:
-        opt.trial = opt.trial + '_trainval'
+    if 'trainval' in opt.model_path:
+        opt.use_trainval = True
+    else:
+        opt.use_trainval = False
 
     # set the path according to the environment
-    if not opt.model_path:
-        opt.model_path = './models_pretrained'
-    if not opt.tb_path:
-        opt.tb_path = './tensorboard'
     if not opt.data_root:
         opt.data_root = './data/{}'.format(opt.dataset)
     else:
         opt.data_root = '{}/{}'.format(opt.data_root, opt.dataset)
     opt.data_aug = True
-
-    iterations = opt.lr_decay_epochs.split(',')
-    opt.lr_decay_epochs = list([])
-    for it in iterations:
-        opt.lr_decay_epochs.append(int(it))
-
-    opt.model_name = '{}_{}_lr_{}_decay_{}_trans_{}'.format(opt.model, opt.dataset, opt.learning_rate,
-                                                            opt.weight_decay, opt.transform)
-
-    if opt.cosine:
-        opt.model_name = '{}_cosine'.format(opt.model_name)
-
-    if opt.adam:
-        opt.model_name = '{}_useAdam'.format(opt.model_name)
-
-    opt.model_name = '{}_trial_{}'.format(opt.model_name, opt.trial)
-
-    opt.tb_folder = os.path.join(opt.tb_path, opt.model_name)
-    if not os.path.isdir(opt.tb_folder):
-        os.makedirs(opt.tb_folder)
-
-    opt.save_folder = os.path.join(opt.model_path, opt.model_name)
-    if not os.path.isdir(opt.save_folder):
-        os.makedirs(opt.save_folder)
-
-    opt.n_gpu = torch.cuda.device_count()
 
     return opt
 
@@ -130,10 +80,10 @@ def main():
     opt = parse_option()
 
     # dataloader
-    train_partition = 'trainval' if opt.use_trainval else 'train'
+    # train_partition = 'trainval' if opt.use_trainval else 'train'
     if opt.dataset == 'miniImageNet':
         train_trans, test_trans = transforms_options[opt.transform]
-        train_loader = DataLoader(ImageNet(args=opt, partition=train_partition, transform=train_trans),
+        train_loader = DataLoader(ImageNet(args=opt, partition="test", transform=train_trans),
                                   batch_size=opt.batch_size, shuffle=True, drop_last=True, 
                                   num_workers=opt.num_workers, pretrain = False)
         val_loader = DataLoader(ImageNet(args=opt, partition='val', transform=test_trans),
