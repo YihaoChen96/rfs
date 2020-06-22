@@ -6,11 +6,13 @@ from scipy.stats import t
 from tqdm import tqdm
 
 import torch
+from torch.utils.data import DataLoader
 from sklearn import metrics
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
+from .util import FewShotBatch
 
 
 def mean_confidence_interval(data, confidence=0.95):
@@ -27,7 +29,7 @@ def normalize(x):
     return out
 
 
-def meta_test(net, testloader, use_logit=True, is_norm=True, classifier='LR'):
+def meta_test(net, testloader, use_logit=True, is_norm=True, classifier='LR', fewshot_batch_size = 64):
     net = net.eval()
     acc = []
 
@@ -41,18 +43,31 @@ def meta_test(net, testloader, use_logit=True, is_norm=True, classifier='LR'):
             query_xs = query_xs.view(-1, height, width, channel)
 
             if use_logit:
-                support_features = net(support_xs).view(support_xs.size(0), -1)
                 query_features = net(query_xs).view(query_xs.size(0), -1)
             else:
-                feat_support, _ = net(support_xs, is_feat=True)
-                support_features = feat_support[-1].view(support_xs.size(0), -1)
                 feat_query, _ = net(query_xs, is_feat=True)
                 query_features = feat_query[-1].view(query_xs.size(0), -1)
 
             if is_norm:
-                support_features = normalize(support_features)
                 query_features = normalize(query_features)
 
+
+            sup_xs_loader = DataLoader(FewShotBatch(support_xs), batch_size = fewshot_batch_size)
+
+            support_features = []
+
+            for idx_sup, sup in enumerate(sup_xs_loader):
+                if use_logit:
+                    support_feature = net(sup).view(sup.size(0), -1)
+                else:
+                    feat_support, _ = net(sup, is_feat=True)
+                    support_feature = feat_support[-1].view(sup.size(0), -1)
+
+                if is_norm:
+                    support_feature = normalize(support_feature)
+                support_features.append(support_feature)
+
+            support_features = torch.cat(support_features, dim = 0)
             support_features = support_features.detach().cpu().numpy()
             query_features = query_features.detach().cpu().numpy()
 
