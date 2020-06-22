@@ -170,7 +170,20 @@ class MetaImageNet(ImageNet):
         
     def __len__(self):
         return self.n_test_runs
-    
+
+class FewShotBatch(Dataset):
+    def __init__(self, args, support, query):
+        super(Dataset, self).__init__()
+        self.support = support
+        self.query = query
+
+    def __getitem__(self, idx):
+        return (self.support[idx], self.query[idx])
+        
+    def __len__(self):
+        return len(self.data)
+
+
     
 if __name__ == '__main__':
     args = lambda x: None
