@@ -50,6 +50,8 @@ def parse_option():
                         help='Number of workers for dataloader')
     parser.add_argument('--test_batch_size', type=int, default=1, metavar='test_batch_size',
                         help='Size of test batch)')
+    parser.add_argument('--fewshot_batch_size', type=int, default=64, metavar='fewshot_batch_size',
+                        help='Size of fewshot batch)')
 
     opt = parser.parse_args()
 
