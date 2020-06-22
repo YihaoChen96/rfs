@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-
+from torch.utils.data import Dataset
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -35,3 +35,15 @@ def accuracy(output, target, topk=(1,)):
             correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
+
+class FewShotBatch(Dataset):
+    def __init__(self, support):
+        super(Dataset, self).__init__()
+        self.support = support
+        # self.query = query
+
+    def __getitem__(self, idx):
+        return self.support[idx]
+        
+    def __len__(self):
+        return len(self.support)
