@@ -43,7 +43,7 @@ class ImageNet(Dataset):
             self.file_pattern = 'miniImageNet_category_split_train_phase_%s.pickle'           
         else:
             self.file_pattern = 'miniImageNet_category_split_%s.pickle'
-        print("Using data from: %s" % self.file_pattern)           
+        # print("Using data from: %s" % self.file_pattern)           
         self.data = {}
         with open(os.path.join(self.data_root, self.file_pattern % partition), 'rb') as f:
             data = pickle.load(f, encoding='latin1')
@@ -170,18 +170,6 @@ class MetaImageNet(ImageNet):
         
     def __len__(self):
         return self.n_test_runs
-
-class FewShotBatch(Dataset):
-    def __init__(self, args, support, query):
-        super(Dataset, self).__init__()
-        self.support = support
-        self.query = query
-
-    def __getitem__(self, idx):
-        return (self.support[idx], self.query[idx])
-        
-    def __len__(self):
-        return len(self.data)
 
 
     
