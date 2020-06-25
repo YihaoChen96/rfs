@@ -28,7 +28,15 @@ renamed the file. Our version of data can be downloaded from here:
 
 Exemplar commands for running the code can be found in `scripts/run.sh`.
 
+To run pretraining, use the following command:
+- "Simple" model: `python train_supervised.py --trial pretrain --model_path path/to/save --tb_path path/to/tensorboard --data_root path/to/data_root`
+- Distilled model: `python train_distillation.py -r 0.5 -a 0.5 --path_t path/to/teacher_model.pth --trial born1 --model_path path/to/save --tb_path path/to/tensorboard --data_root path/to/data_root`
+
+After the pretraining is done, use the pretrained model for few-shot learning by python eval_fewshot.py --model_path /path/to/student.pth --data_root /path/to/data_root --n_shots N --n_ways K --n_aug_support_samples 1
+
 For unuspervised learning methods `CMC` and `MoCo`, please refer to the [CMC](http://github.com/HobbitLong/CMC) repo.
+
+
 
 ## Contacts
 For any questions, please contact:
