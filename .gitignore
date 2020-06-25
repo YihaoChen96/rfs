@@ -120,3 +120,6 @@ venv.bak/
 
 # path
 /path/
+
+# vscode settings
+/.vscode
