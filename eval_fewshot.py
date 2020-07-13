@@ -16,8 +16,8 @@ from dataset.tiered_imagenet import MetaTieredImageNet
 from dataset.cifar import MetaCIFAR100
 from dataset.transform_cfg import transforms_test_options, transforms_list
 
-from eval.meta_eval import meta_test
-
+from eval.meta_eval import meta_test, meta_test_finetune
+import numpy as np
 
 def parse_option():
 
@@ -159,15 +159,29 @@ def main():
     # val_time = time.time() - start
     # print('val_acc_feat: {:.4f}, val_std: {:.4f}, time: {:.1f}'.format(val_acc_feat, val_std_feat, val_time))
 
-    start = time.time()
-    test_acc, test_std = meta_test(model, meta_testloader, classifier = "Cosine")
-    test_time = time.time() - start
-    print('test_acc: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc, test_std, test_time))
+    ### Use cosine similarity ###
+    # start = time.time()
+    # test_acc, test_std = meta_test(model, meta_testloader, classifier = "Cosine")
+    # test_time = time.time() - start
+    # print('test_acc: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc, test_std, test_time))
 
+    # start = time.time()
+    # test_acc_feat, test_std_feat = meta_test(model, meta_testloader, use_logit=False, classifier = "Cosine")
+    # test_time = time.time() - start
+    # print('test_acc_feat: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc_feat, test_std_feat, test_time))
+
+    ### Fine Tuning ###
     start = time.time()
-    test_acc_feat, test_std_feat = meta_test(model, meta_testloader, use_logit=False, classifier = "Cosine")
-    test_time = time.time() - start
-    print('test_acc_feat: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc_feat, test_std_feat, test_time))
+    for i in range(5):
+        print("Epoch %s" % i)
+        (test_acc, test_std), losses = meta_test_finetune(model, meta_testloader)
+        test_time = time.time() - start
+        print('test_acc: {:.4f}, test_std: {:.4f}, loss_mean: {:.4f}, time: {:.1f}'.format(test_acc, test_std, np.mean(losses), test_time))
+
+    # start = time.time()
+    # test_acc_feat, test_std_feat = meta_test_finetune(model, meta_testloader, use_logit=False)
+    # test_time = time.time() - start
+    # print('test_acc_feat: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc_feat, test_std_feat, test_time))
 
 
 if __name__ == '__main__':
