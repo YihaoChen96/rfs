@@ -160,14 +160,14 @@ def main():
     # print('val_acc_feat: {:.4f}, val_std: {:.4f}, time: {:.1f}'.format(val_acc_feat, val_std_feat, val_time))
 
     start = time.time()
-    test_acc, test_std = meta_test(model, meta_testloader)
+    test_acc, test_std = meta_test(model, meta_testloader, classifier = "Cosine")
     test_time = time.time() - start
     print('test_acc: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc, test_std, test_time))
 
-    # start = time.time()
-    # test_acc_feat, test_std_feat = meta_test(model, meta_testloader, use_logit=False)
-    # test_time = time.time() - start
-    # print('test_acc_feat: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc_feat, test_std_feat, test_time))
+    start = time.time()
+    test_acc_feat, test_std_feat = meta_test(model, meta_testloader, use_logit=False, classifier = "Cosine")
+    test_time = time.time() - start
+    print('test_acc_feat: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc_feat, test_std_feat, test_time))
 
 
 if __name__ == '__main__':
