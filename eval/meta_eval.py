@@ -35,9 +35,10 @@ def meta_test_finetune(net, testloader, use_logit=True, is_norm=True, classifier
     losses = []
     optimizer = optim.Adam(net.parameters())
     criterion = nn.BCEWithLogitsLoss()
-    net.train()
+    
     
     for idx, data in enumerate(tqdm(testloader, ascii = True)):
+        net.train()
         support_xs, support_ys, query_xs, query_ys = data
         support_xs = support_xs.cuda()
         query_xs = query_xs.cuda()
@@ -81,23 +82,46 @@ def meta_test_finetune(net, testloader, use_logit=True, is_norm=True, classifier
             clf = LogisticRegression(random_state=0, solver='lbfgs', max_iter=1000,
                                         multi_class='multinomial')
             clf.fit(support_features, support_ys)
+
+            # Fine tuning with support
+            optimizer.zero_grad()
+            support_ys_pred = clf.predict(support_features)
+            loss = -criterion(torch.tensor(support_ys_pred, requires_grad= True, dtype=torch.float64), 
+                             torch.tensor(support_ys, requires_grad=True, dtype=torch.float64)
+                            )
+            loss.backward()
+            optimizer.step()
             query_ys_pred = clf.predict(query_features)
         elif classifier == 'NN':
+            optimizer.zero_grad()
+            support_ys_pred = NN(support_features, support_ys, support_features)
+            loss = -criterion(torch.tensor(support_ys_pred, requires_grad= True, dtype=torch.float64), 
+                             torch.tensor(support_ys, requires_grad=True, dtype=torch.float64)
+                            )
+            loss.backward()
+            optimizer.step()
+
             query_ys_pred = NN(support_features, support_ys, query_features)
         elif classifier == 'Cosine':
+            optimizer.zero_grad()
+            support_ys_pred = Cosine(support_features, support_ys, support_features)
+            loss = -criterion(torch.tensor(support_ys_pred, requires_grad= True, dtype=torch.float64), 
+                             torch.tensor(support_ys, requires_grad=True, dtype=torch.float64)
+                            )
+            loss.backward()
+            optimizer.step()
             query_ys_pred = Cosine(support_features, support_ys, query_features)
         else:
             raise NotImplementedError('classifier not supported: {}'.format(classifier))
         
-        optimizer.zero_grad()
+        net.eval()
         loss = criterion(torch.tensor(query_ys_pred, requires_grad= True, dtype=torch.float64), torch.tensor(query_ys, requires_grad=True, dtype=torch.float64))
-        loss.backward()
-        losses.append(loss.item())
+        losses.append(-loss.item())
 
 
         accuracy = metrics.accuracy_score(query_ys, query_ys_pred)
         acc.append(accuracy)
-    print("Loss Mean: %s, Acc Mean: %s" % (np.mean(losses), np.mean(accuracy)))
+    # print("Loss Mean: %s, Acc Mean: %s" % (np.mean(losses), np.mean(accuracy)))
     torch.cuda.empty_cache()
 
     return mean_confidence_interval(acc), losses
